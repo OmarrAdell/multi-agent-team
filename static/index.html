@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Research Team</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    input { width: 70%; padding: 10px; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #report { white-space: pre-wrap; background: #f6f6f6; padding: 16px; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    td, th { border-bottom: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
+  </style>
+</head>
+<body>
+  <h2>Research Team</h2>
+  <p>Planner → Researchers → Writer → Critic</p>
+  <input id="topic" placeholder="Enter a topic..." />
+  <button id="go">Run team</button>
+  <p id="statusLine"></p>
+  <h3>Report</h3>
+  <div id="report"></div>
+  <h3>Agent trace</h3>
+  <table id="trace"></table>
+
+  <script>
+    const go = document.getElementById("go");
+    const statusLine = document.getElementById("statusLine");
+    const reportEl = document.getElementById("report");
+    const traceEl = document.getElementById("trace");
+
+    go.onclick = async () => {
+      const topic = document.getElementById("topic").value.trim();
+      if (!topic) return;
+      go.disabled = true;
+      reportEl.textContent = "";
+      traceEl.innerHTML = "";
+      statusLine.textContent = "Agents working... this takes 1-3 minutes.";
+
+      try {
+        const res = await fetch("/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic }),
+        });
+        if (!res.ok) throw new Error("Server returned " + res.status);
+        const data = await res.json();
+
+        reportEl.textContent = data.report;
+        for (const e of data.trace) {
+          const row = traceEl.insertRow();
+          [e.at + "s", e.agent, e.kind, e.detail].forEach((value) => {
+            row.insertCell().textContent = value;
+          });
+        }
+        statusLine.textContent = "Done.";
+      } catch (err) {
+        statusLine.textContent = "Error: " + err.message;
+      } finally {
+        go.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
